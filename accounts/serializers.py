@@ -1,4 +1,4 @@
-
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.utils import timezone
 from rest_framework.validators import UniqueValidator
@@ -8,6 +8,8 @@ from accounts.models import Usuario
 # Para LOGIN
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from accounts.utilities.utils import enviar_otp_mail
 
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
@@ -107,3 +109,81 @@ class LoginUsuarioSerializer(serializers.Serializer):
         }
     def get_user(self, obj):
         return obj.get('user')
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(read_only=False)
+    telefono_celular = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        telefono = attrs.get('telefono_celular')
+
+        if not email and not telefono:
+            raise serializers.ValidationError("Debes proporcionar los campos de entrada, email o telefono")
+
+        try:
+            if email:
+                usuario = Usuario.objects.get(email=email)
+            else:
+                usuario = Usuario.objects.get(telefono_celular=telefono)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError("Usuario no encontraduquis")
+
+        #Generar OTP y guardarlo
+        otp = Usuario.generar_otp()
+        usuario.otp_codigo = otp
+        usuario.otp_creado_en = timezone.now()
+        usuario.save()
+
+        #Llamamos a la funcion enviar_otp:mail(usuario)
+        print(f" OTP de recuperacion: {otp}")
+        try:
+            enviar_otp_mail(usuario)
+        except Exception as e:
+            raise serializers.ValidationError(f"No se pudo enviar el OTP por Correo electronico: {str(e)}")
+        attrs["usuario"] = usuario
+        return attrs
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+    telefono_celular = serializers.CharField(required=False)
+    otp = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+    new_password2 = serializers.CharField(write_only=True, style={'input_type': 'password'})
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        telefono = attrs.get('telefono_celular')
+        otp = attrs.get('otp')
+
+        if not email and not telefono:
+            raise serializers.ValidationError("Debes proporcionar los campos de entrada, email o telefono")
+        try:
+            if email:
+                usuario = Usuario.objects.get(email=email)
+            else:
+                usuario = Usuario.objects.get(telefono_celular=telefono)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError("Usuario no encontrado")
+
+        #Validar OTP
+        if usuario.otp_codigo != otp:
+            raise serializers.ValidationError(f"OTP de recuperacion no coinciden, invalido")
+
+        tiempo_expiracion = usuario.otp_creado_en + timezone.timedelta(minutes=5)
+        if timezone.now() > tiempo_expiracion:
+            raise serializers.ValidationError("El código OTP ha expirado")
+
+        #Validar contraseñas
+        if attrs["new_password"] != attrs["new_password2"]:
+            raise serializers.ValidationError("Las contraseñas no coinciden")
+
+        attrs["usuario"] = usuario
+        return attrs
+
+    def save(self, **kwargs):
+        usuario = self.validated_data['usuario']
+        usuario.password = make_password(self.validated_data['new_password'])
+        usuario.otp = None #Invalidar OTP
+        usuario.save()
+        return usuario
