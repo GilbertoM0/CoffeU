@@ -43,8 +43,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
 
+
+    "rest_framework_simplejwt.token_blacklist",
     "accounts",
     "products",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -55,6 +58,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
 ]
 
 ROOT_URLCONF = "msusuarios.urls"
@@ -141,10 +146,6 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
 }
-INSTALLED_APPS += [
-    # ...  Resto de las Apps
-    "rest_framework_simplejwt.token_blacklist",  # si vamos a usar blacklist
-]
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # corta vida para access
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # refresh más largo
@@ -162,4 +163,11 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Dirección de correo del remitente
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "ochoamaciasuni00@gmail.com")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "saulnovoavaldovinos@gmail.com")
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+
