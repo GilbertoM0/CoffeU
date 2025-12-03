@@ -18,6 +18,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiamos el resto del código
 COPY . .
 
+RUN python manage.py makemigrations ventastripe # Genera archivos de migración (opcional si ya los tienes)
+RUN python manage.py migrate --noinput
+
+
 EXPOSE 8080
 
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "msusuarios.wsgi:application"]
