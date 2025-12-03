@@ -18,8 +18,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiamos el resto del código
 COPY . .
 
-RUN python manage.py makemigrations ventastripe # Genera archivos de migración (opcional si ya los tienes)
-RUN python manage.py migrate --noinput
+# Paso 7: Ejecutar makemigrations inyectando temporalmente la SECRET_KEY
+# Usamos un valor fijo para el build. Esto es seguro porque no se usa en runtime de Gunicorn.
+RUN SECRET_KEY="django-insecure-n5rnuw9x2$f!6+9^2q5z-m%8@_@#becnr$$(miy=npkw@-_b6w" python manage.py makemigrations ventastripe --no-input
+
+# Paso 8: Aplicar migraciones inyectando temporalmente la SECRET_KEY
+RUN SECRET_KEY="django-insecure-n5rnuw9x2$f!6+9^2q5z-m%8@_@#becnr$$(miy=npkw@-_b6w" python manage.py migrate --no-input
 
 
 EXPOSE 8080
