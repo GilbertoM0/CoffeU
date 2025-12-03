@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "accounts",
     "products",
     "ventas",
+    "ventastripe",
 ]
 
 MIDDLEWARE = [
@@ -164,3 +165,14 @@ AUTHENTICATION_BACKENDS = [
 
 # Dirección de correo del remitente
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "ochoamaciasuni00@gmail.com")
+
+
+# --- Configuración de Stripe ---
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+# CLAVE CRÍTICA para Webhooks (la obtienes del Dashboard de Stripe)
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+
+# Inicializa el cliente de Stripe globalmente (opcional, pero útil)
+import stripe
+stripe.api_key = STRIPE_SECRET_KEY
