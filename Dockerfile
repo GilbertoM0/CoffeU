@@ -21,4 +21,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD gunicorn --bind 0.0.0.0:$PORT msusuarios.wsgi:application
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "msusuarios.wsgi:application"]
