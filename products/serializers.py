@@ -14,13 +14,19 @@ class ProductSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'stock',
-            'imageUrl',  # Renombrado
-
-            # Nuevos campos (ya coinciden con models.py)
+            'imageUrl',
+            'category',
+            'size',
             'price',
             'rating',
-            'reviewCount',
             'deliveryTime',
             'distance',
             'discount',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hacer opcionales los campos que se calculan después
+        self.fields['deliveryTime'].required = False
+        self.fields['distance'].required = False
+        self.fields['discount'].required = False
