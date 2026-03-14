@@ -2,14 +2,16 @@ from django.core.serializers import serialize
 from django.shortcuts import render
 from django.utils.text import normalize_newlines
 from rest_framework import status, permissions
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.generics import RetrieveUpdateAPIView
 
 from accounts.models import Usuario
 from accounts.serializers import RegistroUsuarioSerializer, LoginUsuarioSerializer, ForgotPasswordSerializer, \
-    ResetPasswordSerializer
+    ResetPasswordSerializer, UpdateUserProfileSerializer
 from accounts.utilities.utils import enviar_otp_mail
 from django.utils import timezone
 
@@ -124,3 +126,12 @@ class ResetPasswordView(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class UpdateProfileView(RetrieveUpdateAPIView):
+    serializer_class = UpdateUserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

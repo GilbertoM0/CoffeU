@@ -187,3 +187,27 @@ class ResetPasswordSerializer(serializers.Serializer):
         usuario.otp = None #Invalidar OTP
         usuario.save()
         return usuario
+
+class UpdateUserProfileSerializer(serializers.ModelSerializer):
+    # Definimos los campos explícitamente para validación, pero sin UniqueValidator estático
+    # para poder manejar la exclusión del propio usuario en la validación.
+    email = serializers.EmailField()
+    telefono_celular = serializers.CharField()
+
+    class Meta:
+        model = Usuario
+        fields = ('nombre_usuario', 'email', 'telefono_celular', 'fecha_nacimiento')
+
+    def validate_email(self, value):
+        user = self.context['request'].user
+        # Verificamos si existe otro usuario con este email, excluyendo al actual
+        if Usuario.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError("El correo electrónico ya está registrado. Intenta con otro.")
+        return value
+
+    def validate_telefono_celular(self, value):
+        user = self.context['request'].user
+        # Verificamos si existe otro usuario con este teléfono, excluyendo al actual
+        if Usuario.objects.exclude(pk=user.pk).filter(telefono_celular=value).exists():
+            raise serializers.ValidationError("El número de teléfono ya está registrado. Intente con otro.")
+        return value
