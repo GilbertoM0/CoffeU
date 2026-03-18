@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import Usuario
 from accounts.serializers import RegistroUsuarioSerializer, LoginUsuarioSerializer, ForgotPasswordSerializer, \
-    ResetPasswordSerializer
+    ResetPasswordSerializer, UpdateProfileSerializer
 from accounts.utilities.utils import enviar_otp_mail
 from django.utils import timezone
 
@@ -123,4 +123,31 @@ class ResetPasswordView(APIView):
                 {"mensaje": "Contraseña restablecida correctamente"},
                 status=status.HTTP_200_OK
             )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UpdateProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = UpdateProfileSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = UpdateProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "mensaje": "Perfil actualizado correctamente",
+                    "usuario": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

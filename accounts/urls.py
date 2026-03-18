@@ -2,7 +2,7 @@
 from django.urls import path
 
 from accounts.serializers import LoginUsuarioSerializer
-from accounts.views import RegistroUsuarioView, ActivarUsuarioView, LoginView, LogoutView, ForgotPasswordView,ResetPasswordView
+from accounts.views import RegistroUsuarioView, ActivarUsuarioView, LoginView, LogoutView, ForgotPasswordView,ResetPasswordView, UpdateProfileView
 from rest_framework_simplejwt.views import TokenRefreshView
 urlpatterns = [
     path('registro/', RegistroUsuarioView.as_view(), name='registro'),
@@ -12,6 +12,7 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='refresh_token'),
     path('forgot/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('reset/', ResetPasswordView.as_view(), name='reset_password'),
+    path('update-profile/', UpdateProfileView.as_view(), name='update_profile'),
 
 
 ]
