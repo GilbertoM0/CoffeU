@@ -42,17 +42,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-
-
     "rest_framework_simplejwt.token_blacklist",
     "accounts",
     "products",
-
     "corsheaders",
-
     "ventas",
     "orders",
-
 ]
 
 MIDDLEWARE = [
@@ -149,7 +144,8 @@ ANYMAIL = {
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    )
+
 }
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # corta vida para access
