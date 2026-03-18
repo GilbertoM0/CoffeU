@@ -111,12 +111,12 @@ class LoginUsuarioSerializer(serializers.Serializer):
         return obj.get('user')
 
 class ForgotPasswordSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False, allow_blank=True)
-    telefono_celular = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(read_only=False)
+    telefono_celular = serializers.CharField(required=False)
 
     def validate(self, attrs):
-        email = (attrs.get('email') or '').strip() or None
-        telefono = (attrs.get('telefono_celular') or '').strip() or None
+        email = attrs.get('email')
+        telefono = attrs.get('telefono_celular')
 
         if not email and not telefono:
             raise serializers.ValidationError("Debes proporcionar los campos de entrada, email o telefono")
