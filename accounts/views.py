@@ -79,7 +79,18 @@ class ActivarUsuarioView(APIView):
         )
 
 class LoginView(APIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response(
+            {
+                "mensaje": "Usa POST para iniciar sesión",
+                "campos_requeridos": ["identificador", "password"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
     def post(self, request):
         serializer = LoginUsuarioSerializer(data=request.data)
         if serializer.is_valid():
