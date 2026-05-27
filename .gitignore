@@ -49,6 +49,9 @@ pytest_cache/
 .env
 *.env
 
+# Credenciales sensibles de Firebase
+*firebase-adminsdk*.json
+
 # Archivos estáticos compilados
 staticfiles/
 media/

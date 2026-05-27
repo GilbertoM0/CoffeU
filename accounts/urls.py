@@ -1,6 +1,6 @@
 
 from django.urls import path
-from accounts.views import RegistroUsuarioView, ActivarUsuarioView, LoginView, LogoutView, ForgotPasswordView, ResetPasswordView, UpdateProfileView
+from accounts.views import RegistroUsuarioView, ActivarUsuarioView, LoginView, LogoutView, ForgotPasswordView, ResetPasswordView, UpdateProfileView, FirebaseVerifyView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path('forgot/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('reset/', ResetPasswordView.as_view(), name='reset_password'),
     path('update-profile/', UpdateProfileView.as_view(), name='update_profile'),
+    path('firebase-verify/', FirebaseVerifyView.as_view(), name='firebase_verify'),
 ]

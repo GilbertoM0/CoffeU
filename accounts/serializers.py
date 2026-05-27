@@ -9,8 +9,6 @@ from accounts.models import Usuario
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.utilities.utils import enviar_otp_mail
-
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
 
@@ -25,14 +23,7 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         ]
     )
 
-    telefono_celular = serializers.CharField(
-        validators=[
-            UniqueValidator(
-                queryset=Usuario.objects.all(),
-                message="El número de teléfono ya está registrado. Intente con otro"
-            )
-        ]
-    )
+    telefono_celular = serializers.CharField()
 
     class Meta:
         model = Usuario
@@ -41,8 +32,17 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
 
+    def validate_telefono_celular(self, value):
+        # Normalizar a E.164 con prefijo +52 si no lo trae
+        if not value.startswith('+'):
+            value = '+52' + value
+        # Unicidad con el número ya normalizado
+        if Usuario.objects.filter(telefono_celular=value).exists():
+            raise serializers.ValidationError("El número de teléfono ya está registrado. Intente con otro")
+        return value
+
     def validate(self, validated_data):
-        # Verificar las conttraseñas
+        # Verificar las contraseñas
         if validated_data['password'] != validated_data['password2']:
             raise serializers.ValidationError({'password': 'Las contraseñas no coinciden'})
         return validated_data
@@ -51,17 +51,13 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         # Extraer el campo password2
         validated_data.pop('password2')
 
-        # Generar el OTP
-        otp = Usuario.generar_otp()
-
-        mi_usuario = Usuario.objects.create_user( # Usuario.objects.create_user(  # Para que pase por las validaciones de DRF
+        # El usuario se crea inactivo; la activación se hace via Firebase Phone OTP
+        mi_usuario = Usuario.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
             nombre_usuario=validated_data['nombre_usuario'],
             telefono_celular=validated_data['telefono_celular'],
             is_active=False,
-            otp_codigo = otp,
-            otp_creado_en = timezone.now()
         )
         return mi_usuario
 
@@ -110,6 +106,42 @@ class LoginUsuarioSerializer(serializers.Serializer):
     def get_user(self, obj):
         return obj.get('user')
 
+
+class FirebaseVerifyTokenSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    def validate(self, attrs):
+        token = attrs.get("id_token")
+
+        if not token:
+            data = self.initial_data if isinstance(self.initial_data, dict) else {}
+            token = data.get("idToken") or data.get("token") or data.get("firebase_token")
+
+        if not token:
+            data = self.initial_data if isinstance(self.initial_data, dict) else {}
+            payload = data.get("data")
+            if hasattr(payload, "get"):
+                token = (
+                    payload.get("id_token")
+                    or payload.get("idToken")
+                    or payload.get("token")
+                    or payload.get("firebase_token")
+                )
+
+        if not token:
+            request = self.context.get("request")
+            auth_header = request.headers.get("Authorization", "") if request else ""
+            if auth_header.lower().startswith("bearer "):
+                token = auth_header.split(" ", 1)[1].strip()
+
+        if not token:
+            raise serializers.ValidationError(
+                {"detail": "Se requiere id_token (o idToken) en el body, o Authorization: Bearer <token>."}
+            )
+
+        attrs["id_token"] = token
+        return attrs
+
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     telefono_celular = serializers.CharField(required=False, allow_blank=True)
@@ -135,13 +167,8 @@ class ForgotPasswordSerializer(serializers.Serializer):
         usuario.otp_creado_en = timezone.now()
         usuario.save()
 
-        #Llamamos a la funcion enviar_otp:mail(usuario)
+        # OTP generado para flujo de recuperacion por mensajes (Firebase/app)
         print(f" OTP de recuperacion: {otp}")
-        try:
-            enviar_otp_mail(usuario)
-        except Exception as e:
-            # En entorno local no siempre hay SMTP; no bloqueamos el flujo de recuperacion.
-            print(f"No se pudo enviar el OTP por Correo electronico: {str(e)}")
         attrs["usuario"] = usuario
         return attrs
 
